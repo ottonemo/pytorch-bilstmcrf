@@ -127,7 +127,7 @@ class CRF(nn.Module):
         mask = sequence_mask(lens + 1, max_len=seq_len + 2).long()
         pad_stop = Variable(labels.data.new(1).fill_(self.stop_idx))
         pad_stop = pad_stop.unsqueeze(-1).expand(batch_size, seq_len + 2)
-        labels_ext = (1 - mask) * pad_stop + mask * labels_ext
+        labels_ext = (1 + -1*mask) * pad_stop + mask * labels_ext
         labels = labels_ext
 
         trn = self.transitions
