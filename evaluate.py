@@ -28,7 +28,8 @@ def preprocess_labels(label_sents):
 
                 pretag = normalize_pretag(pretag)
             elif len(tokens) == 1:
-                pretag, tag = "O", "O"
+                #pretag, tag = "O", "O"
+                pretag, tag = label, label
             else:
                 continue
 
