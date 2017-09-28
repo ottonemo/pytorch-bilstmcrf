@@ -153,7 +153,7 @@ def main():
                       dropout_prob=0)
 
     model.load_state_dict(
-        torch.load(args.ckpt_path), map_location=lambda storage, loc: storage)
+        torch.load(args.ckpt_path, map_location=lambda storage, loc: storage))
 
     if args.gpu:
         model = model.cuda()
