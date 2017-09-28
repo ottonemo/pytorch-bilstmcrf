@@ -14,7 +14,7 @@ def selu(x):
 
 def log_sum_exp(vec, dim=0):
     max, idx = torch.max(vec, dim)
-    max_exp = max.expand_as(vec)
+    max_exp = max.unsqueeze(-1).expand_as(vec)
     return max + torch.log(torch.sum(torch.exp(vec - max_exp), dim))
 
 
