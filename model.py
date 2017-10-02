@@ -251,10 +251,12 @@ class BiLSTMCRF(nn.Module):
 
         o, h = self._run_rnn_packed(self.lstm, x, lens)
 
+        unpacked_seq_len = o.size(1)
+
         o = o.contiguous()
         o = o.view(-1, self.hidden_dim * 2)
         o = selu(self.output_layer(o))
-        o = o.view(batch_size, seq_len, self.n_labels)
+        o = o.view(batch_size, unpacked_seq_len, self.n_labels)
 
         return o
 
