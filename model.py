@@ -179,7 +179,7 @@ class BiLSTMCRF(nn.Module):
         self.output_layer = nn.Linear(hidden_dim * 2, n_labels)
         self.lstm = nn.LSTM(input_size=hidden_dim,
                             hidden_size=hidden_dim,
-                            num_layers=1,
+                            num_layers=2,
                             bidirectional=True,
                             dropout=dropout_prob,
                             batch_first=True)
@@ -224,7 +224,7 @@ class BiLSTMCRF(nn.Module):
             xs: [n_feats, batch_size, seq_len] LongTensor
 
         Returns:
-            [batch_size, seq_len, word_dim] FloatTensor 
+            [batch_size, seq_len, word_dim] FloatTensor
         """
         n_feats, batch_size, seq_len = xs.size()
 

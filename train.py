@@ -50,6 +50,7 @@ def parse_args():
     group.add("--dropout_prob", type=float, default=0.05)
     group.add("--batch_size", type=int, default=32)
     group.add("--max_len", type=int, default=30)
+    group.add("--lr", type=float, default=0.001)
 
     group = parser.add_group("Save Options")
     group.add("--save", action="store_true", default=False)
@@ -190,8 +191,7 @@ def prepare_val_texts(model, batch_xs, batch_y, batch_lens,
 
 def validate(model, data_loader_fn, viz_pool, preview_enabled, n_previews,
              train_instances):
-    legend = ["Loss", "Precision", "Accuracy", "F1-Score"]
-    title = "Validation"
+
     t = tqdm.tqdm()
 
     nll_all = 0.0
@@ -256,8 +256,11 @@ def validate(model, data_loader_fn, viz_pool, preview_enabled, n_previews,
             )
         ))
 
-    plot_X = [train_instances] * 4
-    plot_Y = [nll_all, prec, rec, f1]
+    plot_X = [train_instances] * 3
+    plot_Y = [prec, rec, f1]
+
+    legend = ["Precision", "Accuracy", "F1-Score"]
+    title = "Validation"
 
     viz_run("plot", tuple(), dict(
         X=[plot_X],
@@ -269,16 +272,21 @@ def validate(model, data_loader_fn, viz_pool, preview_enabled, n_previews,
         flush=True
     ))
 
+    val_loss_X = [train_instances]
+    val_loss_Y = [nll_all]
+    return val_loss_X, val_loss_Y
+
 
 def train(model, data_loader_fn, val_data_loader_fn, n_epochs, viz_pool,
           val_period, n_previews, val_enabled, preview_enabled,
-          save_enabled, save_dir, save_period):
+          save_enabled, save_dir, save_period, lr):
     params = set(p for p in model.parameters() if p.requires_grad)
-    optimizer = O.Adam(params)
-    legend = ["-Log Likelihood"]
+    optimizer = O.Adam(params, lr=lr)
     step = 0
     n_instances = 0
     t = tqdm.tqdm()
+    val_loss_X = 0
+    val_loss_Y = [0]
 
     for _ in range(n_epochs):
         loaders = data_loader_fn()
@@ -306,18 +314,21 @@ def train(model, data_loader_fn, val_data_loader_fn, n_epochs, viz_pool,
             clip_grad_norm(model.parameters(), 3)
             optimizer.step()
 
+
+            if val_enabled and step % val_period == 0:
+                val_loss_X, val_loss_Y = validate(model, val_data_loader_fn, viz_pool, preview_enabled,
+                         n_previews, n_instances)
+
+            legend = ["-Log Likelihood", "Validation"]
+
             viz_run("plot", tuple(), dict(
-                X=[plot_X],
-                Y=[plot_Y],
+                X=[[plot_X, plot_X]],
+                Y=[[plot_Y] + val_loss_Y],
                 opts=dict(
                     legend=legend,
                     title="Training Loss"
                 )
             ))
-
-            if val_enabled and step % val_period == 0:
-                validate(model, val_data_loader_fn, viz_pool, preview_enabled,
-                         n_previews, n_instances)
 
             if save_enabled and step % save_period == 0:
                 model_filename = "model-{}-{:.4f}".format(
@@ -462,7 +473,8 @@ def main():
           val_enabled=args.val,
           val_period=args.val_period,
           preview_enabled=args.text_preview,
-          save_enabled=args.save)
+          save_enabled=args.save,
+          lr=args.lr)
 
     # Flush remaining buffer
     viz_run("flush", tuple(), dict())
